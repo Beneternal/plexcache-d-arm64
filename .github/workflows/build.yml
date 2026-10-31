@@ -8,24 +8,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
-      - name: Build and Export
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          # 修改了这里！指向 docker 文件夹里的 Dockerfile
-          file: ./docker/Dockerfile
-          platforms: linux/arm64
-          outputs: type=docker,dest=/tmp/plexcache-d-arm64.tar
-          
+
+      - name: Build Docker Image
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            -t plexcache-d:arm64 \
+            --load \
+            -f ./docker/Dockerfile .
+
+      - name: Export Docker-format tar
+        run: |
+          # 关键：使用 docker save 导出纯 Docker 格式
+          docker save -o plexcache-d-arm64.tar plexcache-d:arm64
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plexcache-d-arm64
-          path: /tmp/plexcache-d-arm64.tar
+          name: plexcache-d-arm64-docker
+          path: plexcache-d-arm64.tar
